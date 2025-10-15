@@ -11,7 +11,6 @@ function HomePage() {
         setMarkers({ latitude: coord.latitude, longitude: coord.longitude });
     };
 
-
     return <Screen>
         <Label label="Map Locations" />
         <MapView
