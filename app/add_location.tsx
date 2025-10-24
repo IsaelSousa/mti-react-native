@@ -1,10 +1,12 @@
 import ColorPickerModal from '@/components/color_picker';
 import { useColorScheme } from '@/hooks/use-color-scheme.web';
+import { getItem, setItem } from '@/utils/AsyncStorage';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Region } from 'react-native-maps';
+import { Toast } from 'toastify-react-native';
 
 export interface AddLocationParams {
     latitude: number;
@@ -16,9 +18,27 @@ export interface AddLocationParams {
 export default function AddLocationPage() {
     const { region } = useLocalSearchParams();
     const colorScheme = useColorScheme();
+    const router = useRouter();
 
     const [openColorPicker, setOpenColorPicker] = useState<boolean>(false);
     const [regionState, setRegionState] = useState<AddLocationParams | null>(null);
+
+    const handleSavePicker = () => {
+        try {
+            const getActualItems = getItem<AddLocationParams[]>('locations');
+
+            getActualItems.then((items) => {
+                const newItems = items ? [...items] : [];
+                if (regionState) newItems.push(regionState);
+                setItem('locations', newItems);
+            });
+
+            Toast.success('Location saved successfully!');
+            router.push('/');
+        } catch (error) {
+            Toast.error('Error saving location');
+        }
+    }
 
     useEffect(() => {
         if (region) {
@@ -72,7 +92,7 @@ export default function AddLocationPage() {
             placeholderTextColor={colorScheme === 'dark' ? '#888888' : '#aaaaaa'}
         />
 
-        <TouchableOpacity style={style.saveButton}>
+        <TouchableOpacity style={style.saveButton} onPress={handleSavePicker}>
             <Text style={{ color: '#ffffff', fontSize: 20 }}>Save Location</Text>
         </TouchableOpacity>
     </View>;

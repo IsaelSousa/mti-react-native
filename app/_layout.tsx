@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ToastManager from 'toastify-react-native';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -21,6 +22,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <ToastManager />
       <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
       <StatusBar style="auto" />
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

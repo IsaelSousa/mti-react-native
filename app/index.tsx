@@ -1,67 +1,116 @@
 import Label from '@/components/label';
+import ListActionsButtons from '@/components/list_actions_buttons';
 import Screen from '@/components/ui/screen';
+import { getItem } from '@/utils/AsyncStorage';
 import Entypo from '@expo/vector-icons/Entypo';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, useColorScheme } from 'react-native';
+import { StyleSheet, useColorScheme } from 'react-native';
 import MapView, { MapPressEvent, Marker, Region } from 'react-native-maps';
-import { Modalize } from 'react-native-modalize';
+import { Toast } from 'toastify-react-native';
+import { AddLocationParams } from './add_location';
 
 export default function HomePage() {
-    const modalizeRef = useRef<Modalize>(null);
     const colorScheme = useColorScheme();
     const router = useRouter();
+    const mapRef = useRef<MapView>(null);
 
-    const [markers, setMarkers] = useState<Region>({
-        latitude: 37.78825,
-        longitude: -122.4324,
+    const [region, setRegion] = useState<Region>({
+        latitude: -23.55052,
+        longitude: -46.633308,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
     });
 
+    const [markersList, setMarkersList] = useState<AddLocationParams[]>([]);
+
     const handleMapPress = (event: MapPressEvent) => {
         const coord = event.nativeEvent.coordinate;
-        setMarkers({ latitude: coord.latitude, longitude: coord.longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 });
+        setRegion({ latitude: coord.latitude, longitude: coord.longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 });
     };
 
-    const getLocation = async () => {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-            return;
+    const navigateToAddLocation = (region: Region | undefined) => {
+        if (region) {
+            router.push({ pathname: '/add_location', params: { region: JSON.stringify(region) } });
         }
+    };
 
-        const currentLocation = await Location.getCurrentPositionAsync({});
-        setMarkers({
-            latitude: currentLocation.coords.latitude,
-            longitude: currentLocation.coords.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
+    const handleRefreshLocations = () => {
+        const storage = getItem<AddLocationParams[]>('locations');
+        storage.then((items) => {
+            if (items) {
+                setMarkersList(items);
+
+                const lastItem = items[items.length - 1];
+                const newRegion = {
+                    latitude: lastItem.latitude,
+                    longitude: lastItem.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                };
+
+                setRegion(newRegion);
+                mapRef.current?.animateToRegion(newRegion, 1000);
+                Toast.success('Locations refreshed successfully!');
+            }
         });
     };
 
-    const navigateToAddLocation = (region: Region) => {
-        router.push({ pathname: '/add_location', params: { region: JSON.stringify(region) } });
-    }
+    useEffect(() => {
+        (async () => {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Toast.error('Permission to access location was denied');
+                return;
+            }
+
+            const location = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.High,
+            });
+
+            const newRegion = {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+            };
+
+            setRegion(newRegion);
+            mapRef.current?.animateToRegion(newRegion, 1000);
+        })();
+    }, []);
 
     useEffect(() => {
-        (async () => await getLocation())();
+        handleRefreshLocations();
     }, []);
+
+    useEffect(() => {
+        handleRefreshLocations();
+    }, [router]);
 
     return <Screen>
         <Label label="Map Locations" />
         <MapView
             style={{ flex: 1 }}
             onPress={handleMapPress}
-            region={markers}
-            showsUserLocation={true}
-            followsUserLocation={true}
+            showsUserLocation
+            followsUserLocation
+            initialRegion={region}
         >
-            <Marker coordinate={markers} />
+            <Marker coordinate={region} />
+            {markersList.map((marker, index) => (
+                <Marker key={index} coordinate={marker} pinColor={marker.color} />
+            ))}
         </MapView>
-        <TouchableOpacity onPress={() => navigateToAddLocation(markers)} style={[styles.fab, { backgroundColor: colorScheme === 'dark' ? '#1d1d1d' : '#ffffff' }]}>
-            <Text style={styles.fabText}><Entypo name="plus" size={24} color={colorScheme === 'dark' ? '#ffffff' : '#000000'} /></Text>
-        </TouchableOpacity>
+        <ListActionsButtons listActions={[{
+            icon: <Entypo name="plus" size={24} color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />,
+            onPress: () => navigateToAddLocation(region)
+        }, {
+            icon: <FontAwesome name="refresh" size={24} color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />,
+            onPress: handleRefreshLocations
+        }]} />
     </Screen>;
 }
 
