@@ -4,9 +4,10 @@ import Screen from '@/components/ui/screen';
 import { getItem } from '@/utils/AsyncStorage';
 import Entypo from '@expo/vector-icons/Entypo';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, useColorScheme } from 'react-native';
 import MapView, { MapPressEvent, Marker, Region } from 'react-native-maps';
 import { Toast } from 'toastify-react-native';
@@ -41,6 +42,8 @@ export default function HomePage() {
         const storage = getItem<AddLocationParams[]>('locations');
         storage.then((items) => {
             if (items) {
+                if (items.length === 0) return;
+
                 setMarkersList(items);
 
                 const lastItem = items[items.length - 1];
@@ -86,9 +89,13 @@ export default function HomePage() {
         handleRefreshLocations();
     }, []);
 
-    useEffect(() => {
-        handleRefreshLocations();
-    }, [router]);
+    useFocusEffect(
+        useCallback(() => {
+            setTimeout(() => {
+               handleRefreshLocations(); 
+            }, 1000);
+        }, [])
+    );
 
     return <Screen>
         <Label label="Map Locations" />
@@ -98,6 +105,7 @@ export default function HomePage() {
             showsUserLocation
             followsUserLocation
             initialRegion={region}
+            region={region}
         >
             <Marker coordinate={region} />
             {markersList.map((marker, index) => (
@@ -110,6 +118,10 @@ export default function HomePage() {
         }, {
             icon: <FontAwesome name="refresh" size={24} color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />,
             onPress: handleRefreshLocations
+        },
+        {
+            icon: <FontAwesome name="list" size={24} color={colorScheme === 'dark' ? '#ffffff' : '#000000'} />,
+            onPress: () => router.push('/locations_list')
         }]} />
     </Screen>;
 }

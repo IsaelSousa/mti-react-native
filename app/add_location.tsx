@@ -6,9 +6,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Region } from 'react-native-maps';
+import uuid from 'react-native-uuid';
 import { Toast } from 'toastify-react-native';
 
 export interface AddLocationParams {
+    id: string;
     latitude: number;
     longitude: number;
     name: string;
@@ -41,19 +43,23 @@ export default function AddLocationPage() {
     }
 
     useEffect(() => {
+        const id = uuid.v4();
         if (region) {
             const data = JSON.parse(region as string) as Region;
             setRegionState({
+                id,
                 latitude: data.latitude,
                 longitude: data.longitude,
                 name: '',
-                color: '',
+                color: '#ff0000',
             });
         }
     }, [region]);
 
     return <View style={style.container}>
-        <ColorPickerModal open={openColorPicker}
+        <ColorPickerModal
+            open={openColorPicker}
+            initialColor={regionState?.color}
             onComplete={(color) => {
                 setRegionState((prev) => prev ? { ...prev, color: color.hex } : null);
                 setOpenColorPicker(false);

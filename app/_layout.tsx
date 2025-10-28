@@ -24,14 +24,15 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ToastManager />
       <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
-      <StatusBar style="auto" />
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="add_location" options={{ title: 'Add Location' }} />
-          <Stack.Screen name="edit_location" options={{ title: 'Edit Location' }} />
-        </Stack>
-      </ThemeProvider>
+        <StatusBar style="auto" />
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="add_location" options={{ title: 'Add Location' }} />
+            <Stack.Screen name="edit_location" options={{ title: 'Edit Location' }} />
+            <Stack.Screen name="locations_list" options={{ title: 'Locations List' }} />
+          </Stack>
+        </ThemeProvider>
       </SafeAreaView>
     </GestureHandlerRootView>
   );
